@@ -1,4 +1,15 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package notes;
 
+/**
+ *
+ * @author Academia
+ */
+// Edit Combobox (x) |  Width Combobox (x)  |  Guardar estilos (x)  |  Vista previa (~)  |  JToolBar newLine (v)
 import java.util.*;
 import javax.swing.*;
 import javax.swing.text.StyleConstants;
@@ -16,7 +27,6 @@ import java.io.FileWriter;
 class Notes extends JFrame implements ActionListener{
 
     private JMenuBar menuBar;
-    JMenu file;
     private JToolBar toolBar;
     private JPopupMenu popMenu;
 
@@ -31,9 +41,9 @@ class Notes extends JFrame implements ActionListener{
         super("Notes");
 
         toolBar = new JToolBar();
-        popMenu = new JPopupMenu();
+        popMenu = new JPopupMenu();        
 
-        file = new JMenu("Archivo");
+        JMenu file = new JMenu("Archivo");
         createComponent("Guardar", file, "Guardar documento");
         createComponent("Nuevo", file, "Abrir documento en blanco");
         createComponent("Abrir", file, "Abrir documento especifico");
@@ -46,25 +56,25 @@ class Notes extends JFrame implements ActionListener{
         createComponent("Pegar", edit, "Pegar texto seleccionado");
         toolBar.addSeparator();
         popMenu.addSeparator();
-
+        
         JMenu format = new JMenu("Formato");
-        createComponent("Negrita", format, "Poner en negrita texto seleccionado");
-        createComponent("Cursiva", format, "Poner en cursiva texto seleccionado");
-        createComponent("Subrayado", format, "Subrayar texto seleccionado");
-        toolBar.addSeparator();
-        format.addSeparator();
         createComponent("Alinear Izquierda", format, "Alinear parrafo izquierda");
         createComponent("Alinear Derecha", format, "Alinear parrafo derecha");
         createComponent("Centrar", format, "Centrar parrafo");
         createComponent("Justificar", format, "Justificar parrafo");
         toolBar.addSeparator();
-
+        format.addSeparator();
+        createComponent("Negrita", format, "Poner en negrita texto seleccionado");
+        createComponent("Cursiva", format, "Poner en cursiva texto seleccionado");
+        createComponent("Subrayado", format, "Subrayar texto seleccionado");
+        toolBar.addSeparator();
+        
         // FONTS & SIZE ------------------------------------------
         JComboBox<String> fonts= new JComboBox<>();
         createComboBox(fonts, "font");        
         JComboBox<String> fontSize = new JComboBox<>();
         createComboBox(fontSize, "size");
-        // -----------------------------------------------------------------
+        // -------------------------------------------------------
 
         JMenu others = new JMenu("Otros");
         createComponent("Cerrar", others, "Cierra el programa");
@@ -85,10 +95,9 @@ class Notes extends JFrame implements ActionListener{
         // STRUCTURING THE FRAME ----------------------------------
         setLayout(new BorderLayout());
         setJMenuBar(menuBar);
-        add(sPanel, BorderLayout.CENTER);
         add(toolBar, BorderLayout.NORTH);
-
-        // --------------------------------------------------------
+        add(sPanel, BorderLayout.CENTER);
+        
         setSize(500, 500);
         setExtendedState(MAXIMIZED_BOTH);
         setVisible(true);
@@ -101,11 +110,10 @@ class Notes extends JFrame implements ActionListener{
         });
     }
 
-    // =================================================================================
-    // COMPONENT CREATOR ===============================================================
+    // GENERATE COMPONENTS =============================================================
     private void createComponent ( String s, JMenu m, String tooltip){
 
-        ImageIcon icon = new ImageIcon("img/"+s+".png");
+        ImageIcon icon = new ImageIcon(getClass().getResource("img/"+s+".png"));
         ActionListener action = this;
 
         // Special cases --------------------------------------------------------------
@@ -118,7 +126,8 @@ class Notes extends JFrame implements ActionListener{
         else if(s.equals("Justificar"))        {action = new StyledEditorKit.AlignmentAction("Justificar", StyleConstants.ALIGN_JUSTIFIED);}
 
         // Menu Item -----------------------------------------------------------------
-        JMenuItem mItem = new JMenuItem(s, icon);
+        JMenuItem mItem = new JMenuItem(s);
+        mItem.setIcon(icon);
         mItem.addActionListener(action);
         mItem.setToolTipText(tooltip);
         m.add(mItem);
@@ -139,11 +148,14 @@ class Notes extends JFrame implements ActionListener{
         }
     }
 
+    // COMBOBOX ========================================================================
     private void createComboBox (JComboBox<String> fPropertie, String s){
-        // fPropertie.setEditable(true);
+        
         if (s.equals("font")){ 
             fPropertie.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+
             String [] sisFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+            
             for(String f:sisFonts) {
                 fPropertie.addItem(f);
             }
@@ -155,43 +167,92 @@ class Notes extends JFrame implements ActionListener{
             });
         } else {
             for(int i = 12; i < 72; i += 2) {fPropertie.addItem(String.valueOf (i));}
+
             fPropertie.addActionListener(e -> {  
-                Action fontAction = new StyledEditorKit.FontSizeAction("", Integer.parseInt(fPropertie.getSelectedItem().toString()));
+                int size = Integer.parseInt(fPropertie.getSelectedItem().toString());
+                Action fontAction = new StyledEditorKit.FontSizeAction("", size);
                 fontAction.actionPerformed(e);
             });
         }
-        
         toolBar.add(fPropertie);
         toolBar.addSeparator();
     }
 
-    // OPEN ============================================================================
-    private void open() {
-        JFileChooser j = new JFileChooser("f:");
-        
-        // Save file dialog
-        int r = j.showOpenDialog(this);
-        
-        if (r == JFileChooser.APPROVE_OPTION) {               
-            File fi = new File(j.getSelectedFile().getAbsolutePath());
+    // =================================================================================
+    // MAIN
+    // =================================================================================
+    public static void main(String[] args) {
+        new Notes();
+    }
+
+    // =================================================================================
+    // EVENTS 
+    // =================================================================================
+    public void actionPerformed(ActionEvent e) {
+        String ac = e.getActionCommand();
+        String s = e.getSource().toString();
+
+        // File --------------------------------------------------------------------------
+        if (ac.equals("Guardar") || s.contains("Guardar"))  {save("");}
+        else if (ac.equals("Nuevo") || s.contains("Nuevo")) {newDoc();}
+        else if (ac.equals("Abrir") || s.contains("Abrir")) {open();}
+        else if (ac.equals("Imprimir") || s.contains("Imprimir")) {
             try {
-                // File reader
-                String sReader = "", sText = "";
-                FileReader fr = new FileReader(fi);
-                BufferedReader br = new BufferedReader(fr);
-                
-                while ((sReader = br.readLine()) != null) {   
-                    sText += sReader + "\n";
-                }
-  
-                text.setText(sText);
-                br.close();
+                JOptionPane.showMessageDialog(this, text.getText());
+                text.print();
 
             } catch (Exception evt) {
                 JOptionPane.showMessageDialog(this, evt.getMessage());
-            }    
-        } else {//User cancels
-            JOptionPane.showMessageDialog(this, "Operacion cancelada");
+            }
+        }
+
+        // Edit --------------------------------------------------------------------------
+        else if (ac.equals("Cortar") || s.contains("Cortar")) {text.cut();}
+        else if (ac.equals("Copiar") || s.contains("Copiar")) {text.copy();}
+        else if (ac.equals("Pegar")  ||  s.contains("Pegar")) {text.paste();}
+
+        // Others --------------------------------------------------------------------------
+        else if(ac.equals("Cerrar") || s.contains("Cerrar")) {close();}
+        else if (ac.equals("Ayuda") || s.contains("Ayuda"))  {
+            String pgrInfo = "Programa realizado por: Javier Palacios\n" +
+                             "Fecha:                  15/10/2021\n" + 
+                             "Version:                1.0.0";
+            JOptionPane.showMessageDialog(this, pgrInfo, "Informacion del Programa", 1);
+        }
+    }
+
+    // OPEN ============================================================================
+    private void open() {
+        int openDoc = JOptionPane.showConfirmDialog(this, "Guardar los cambios?", "Nuevo Documento", JOptionPane.YES_NO_CANCEL_OPTION);
+        if(openDoc == 0) {save("");} //yes
+
+        else if (openDoc != 2){
+            JFileChooser j = new JFileChooser("f:");
+            
+            // Save file dialog
+            int r = j.showOpenDialog(this);
+            
+            if (r == JFileChooser.APPROVE_OPTION) {               
+                File fi = new File(j.getSelectedFile().getAbsolutePath());
+                try {
+                    // File reader
+                    String sReader = "", sText = "";
+                    FileReader fr = new FileReader(fi);
+                    BufferedReader br = new BufferedReader(fr);
+                    
+                    while ((sReader = br.readLine()) != null) {   
+                        sText += sReader + "\n";
+                    }
+    
+                    text.setText(sText);
+                    br.close();
+
+                } catch (Exception evt) {
+                    JOptionPane.showMessageDialog(this, evt.getMessage());
+                }    
+            } else {//User cancels
+                JOptionPane.showMessageDialog(this, "Operacion cancelada");
+            }
         }
     }
 
@@ -227,7 +288,7 @@ class Notes extends JFrame implements ActionListener{
             }
     }
 
-    // CLOSE =============================================================================
+    // NEW DOCUMENT ======================================================================
     private void newDoc (){
         int newD = JOptionPane.showConfirmDialog(this, "Guardar los cambios?", "Nuevo Documento", JOptionPane.YES_NO_CANCEL_OPTION);
         if(newD == 1) {text.setText("");} //no
@@ -237,43 +298,12 @@ class Notes extends JFrame implements ActionListener{
         } 
     }
 
-    // NEW DOCUMENT =============================================================================
+    // CLOSE =============================================================================
     private void close (){
         int exit = JOptionPane.showConfirmDialog(this, "Guardar los cambios?", "Salir", JOptionPane.YES_NO_CANCEL_OPTION);
         if(exit == 1) {System.exit(0);} //no
         else if(exit == 0) {//yes
             save("close");
         } 
-    }
-
-    // EVENT LISTENER =====================================================================
-    public void actionPerformed(ActionEvent e) {
-        String ac = e.getActionCommand();
-        String s = e.getSource().toString();
-
-        // File --------------------------------------------------------------------------
-        if (ac.equals("Guardar") || s.contains("Guardar"))  {save("");}
-        else if (ac.equals("Nuevo") || s.contains("Nuevo")) {newDoc();}
-        else if (ac.equals("Abrir") || s.contains("Abrir")) {open();}
-        else if (ac.equals("Imprimir") || s.contains("Imprimir")) {
-            try {
-                text.print();
-            } catch (Exception evt) {
-                JOptionPane.showMessageDialog(this, evt.getMessage());
-            }
-        }
-
-        // Edit --------------------------------------------------------------------------
-        else if (ac.equals("Cortar") || s.contains("Cortar")) {text.cut();}
-        else if (ac.equals("Copiar") || s.contains("Copiar")) {text.copy();}
-        else if (ac.equals("Pegar")  ||  s.contains("Pegar")) {text.paste();}
-
-        // Others --------------------------------------------------------------------------
-        else if(ac.equals("Cerrar") || s.contains("Cerrar")) {close();}
-        else if (ac.equals("Ayuda") || s.contains("Ayuda"))  {}
-    }
-
-    public static void main(String[] args) {
-        new Notes();
     }
 }
